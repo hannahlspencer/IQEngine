@@ -105,7 +105,7 @@ export const PluginsPane = () => {
           toast.error(`Cloud storage not available, there is a problem with this data source's SAS token`);
           return;
         }
-        console.log('No temp sas token found, defaulting to connection info')
+        console.debug('No temp sas token found, defaulting to connection info')
         token = connectionInfo.sasToken
       }
       
