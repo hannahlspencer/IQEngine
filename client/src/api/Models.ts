@@ -5,6 +5,7 @@ export interface DataSource {
   imageURL?: string;
   account: string;
   container: string;
+  tempSasToken?: string;
   sasToken?: string;
 }
 

@@ -44,6 +44,11 @@ export const getDataSource = (type: string, account: string, container: string, 
   );
 };
 
+export const getTemporaryToken = (type: string, account: string, container: string, enabled = true) => {
+  const { data } = getDataSource(type, account, container)
+  return data ? data.tempSasToken : null
+}
+
 export const useQueryMeta = (type: string, queryString: string, enabled = true) => {
   const { dataSourcesQuery, filesQuery } = useUserSettings();
   return useQuery<TraceabilityOrigin[]>(

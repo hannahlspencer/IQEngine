@@ -16,7 +16,8 @@ import { useGetPluginsComponents } from '@/pages/recording-view/hooks/use-get-pl
 import { useGetPlugins } from '@/api/plugin/queries';
 import { toast } from 'react-hot-toast';
 import { dataTypeToBytesPerIQSample } from '@/utils/selector';
-import { getDataSource } from '@/api/datasource/queries';
+import { useUserSettings } from '@/api/user-settings/use-user-settings';
+import { getTemporaryToken } from '@/api/datasource/queries';
 import { useSpectrogramContext } from '../hooks/use-spectrogram-context';
 import { useCursorContext } from '../hooks/use-cursor-context';
 
@@ -37,7 +38,6 @@ export const PluginsPane = () => {
   const { meta, type, account, container, spectrogramHeight, fftSize, selectedAnnotation, setMeta } = useSpectrogramContext();
   const { cursorTimeEnabled, cursorTime, cursorData } = useCursorContext();
   const { data: plugins, isError } = useGetPlugins();
-  const { data } = getDataSource(type, account, container, true);
   const { PluginOption, EditPluginParameters, pluginParameters, setPluginParameters } = useGetPluginsComponents();
   const [selectedPlugin, setSelectedPlugin] = useState('');
   const [selectedMethod, setSelectedMethod] = useState('');
@@ -45,14 +45,11 @@ export const PluginsPane = () => {
   const [modalSamples, setModalSamples] = useState<Float32Array>(new Float32Array([]));
   const [modalSpectrogram, setmodalSpectrogram] = useState(null);
   const [useCloudStorage, setUseCloudStorage] = useState(true);
+  const { dataSourcesQuery } = useUserSettings();
+  const connectionInfo = dataSourcesQuery?.data[`${account}/${container}`];
+  let token = getTemporaryToken(type, account, container, true);
   let byte_offset = meta.getBytesPerIQSample() * cursorTime.start;
   let byte_length = meta.getBytesPerIQSample() * (cursorTime.end - cursorTime.start);
-  let publicDataSource = false
-
-
-  if(data) {
-    publicDataSource = data.sasToken == ""
-  }
 
   const handleChangePlugin = (e) => {
     setSelectedPlugin(e.target.value);
@@ -102,31 +99,16 @@ export const PluginsPane = () => {
       custom_params: {},
     };
 
-
-    if(useCloudStorage && publicDataSource) {
-      body = {
-        samples_b64: [],
-        samples_cloud: [
-          {
-            account_name: account,
-            container_name: container,
-            file_path: meta.getFileName(),
-            sas_token: "",
-            sample_rate: sampleRate,
-            center_freq: freq,
-            data_type: MimeTypes[meta.getDataType()],
-            byte_offset: byte_offset,
-            byte_length: byte_length,
-          },
-        ],
-        custom_params: {
-          start_freq: annotation ? annotation['core:freq_lower_edge'] : null,
-          end_freq: annotation ? annotation['core:freq_upper_edge'] : null,
-        },
-      };
-    }
-
     if (useCloudStorage) {
+      if (token == null) {
+        if(!connectionInfo) {
+          toast.error(`Cloud storage not available, there is a problem with this data source's SAS token`);
+          return;
+        }
+        console.log('No temp sas token found, defaulting to connection info')
+        token = connectionInfo.sasToken
+      }
+      
       body = {
         samples_b64: [],
         samples_cloud: [
@@ -134,7 +116,7 @@ export const PluginsPane = () => {
             account_name: account,
             container_name: container,
             file_path: meta.getFileName(),
-            sas_token: null,
+            sas_token: token,
             sample_rate: sampleRate,
             center_freq: freq,
             data_type: MimeTypes[meta.getDataType()],
@@ -335,7 +317,7 @@ export const PluginsPane = () => {
           ))}
         </select>
       </label>
-      {(data && type != 'local') && (
+      {(type != 'local') && (
         <label className="label cursor-pointer">
           <span>Use Cloud Storage</span>
           <input
