@@ -9,6 +9,9 @@ export class LocalClient implements DataSourceClient {
   constructor(files: FileWithDirectoryAndFileHandle[]) {
     this.files = files;
   }
+  getSasToken(account: string, container: string, filepath: string): Promise<String> {
+    throw new Error('get sas token not supported for local data sources');
+  }
   sync(account: string, container: string): Promise<void> {
     throw new Error('sync not supported for local data sources');
   }

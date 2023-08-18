@@ -9,6 +9,9 @@ export class BlobClient implements DataSourceClient {
   constructor(dataSources: Record<string, DataSource>) {
     this.dataSources = dataSources;
   }
+  getSasToken(account: string, container: string, filepath: string): Promise<String> {
+    throw new Error('Method not implemented.');
+  }
   sync(account: string, container: string): Promise<void> {
     throw new Error('sync not supported for blob data sources');
   }

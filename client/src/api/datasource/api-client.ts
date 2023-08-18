@@ -81,6 +81,21 @@ export class ApiClient implements DataSourceClient {
     }
     return response.data;
   }
+
+  async getSasToken(account: string, container: string, filepath: string): Promise<String> {
+    const response = await this.requestWithAuthIfRequired({
+      method: 'get',
+      url: `/api/datasources/${account}/${container}/${filepath}/sas`,
+    });
+
+    if (response.status !== 200) {
+      throw new Error(`Unexpected status code: ${response.status}`);
+    }
+    if (!response.data) {
+      return null;
+    }
+    return response.data
+  }
   async create(dataSource: DataSource): Promise<DataSource> {
     const response = await this.requestWithAuthIfRequired({
       method: 'post',
